@@ -1,22 +1,22 @@
-import "reflect-metadata"
+import "reflect-metadata";
 import { DataSource } from "typeorm";
+import { config } from "./config";
+import { Cart } from "./entities/Cart";
+import { CartItem } from "./entities/CartItem";
 import { Order } from "./entities/Order";
 import { OrderItem } from "./entities/OrderItem";
 import { Product } from "./entities/Product";
-import {Cart} from "./entities/Cart";
-import {CartItem} from "./entities/CartItem";
-import {User} from "./entities/User";
-import {Reservation} from "./entities/Reservation";
+import { Reservation } from "./entities/Reservation";
+import { User } from "./entities/User";
 
 export const AppDataSource = new DataSource({
     type: "postgres",
-    url: process.env.DATABASE_URL,
-    entities: [Order, OrderItem, Product, Cart, CartItem, User, Reservation],
+    url: config.databaseUrl,
+    entities: [User, Product, Cart, CartItem, Reservation, Order, OrderItem],
     synchronize: true,
-    logging: true,
+    logging: ["error", "schema"],
     extra: {
-        max:20,
-        connectionTimeoutMillis: 5000
-    }
-
-})
+        max: 30,
+        connectionTimeoutMillis: 10000,
+    },
+});

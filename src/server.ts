@@ -1,40 +1,37 @@
-import "dotenv/config";
-import {app} from './app';
-import {appDataSource} from "./database";
-import {redis} from "./redis";
+import "reflect-metadata";
+import { app } from "./app";
+import { config } from "./config";
+import { AppDataSource } from "./database";
+import { redis } from "./redis";
+import { seedIfEmpty } from "./seed";
+import { sweepExpired } from "./services/reservation.service";
 
-async function bootstrap() {
-    if (!process.env.DATABASE_URL || !process.env.REDIS_URL) {
-        throw new Error('Missing environment variables');
-    }
-    await appDataSource.initialize();
+async function bootstrap(): Promise<void> {
+    await AppDataSource.initialize();
     await redis.connect();
-    const port = process.env.PORT || 3000;
-    const server = app.listen(port, () => {
-        console.log(`Server is running on port ${port}`);
+    await seedIfEmpty();
+
+    const sweeper = setInterval(() => {
+        sweepExpired().catch((error) => console.error("sweep failed", error));
+    }, 5000);
+
+    const server = app.listen(config.port, () => {
+        console.log(`FlashKart API listening on ${config.port}`);
     });
-    const shutdown = async () => {
-        server.close(async () => {
-            try {
-                if (redis.isOpen) {
-                    await redis.disconnect();
-                }
-                if (appDataSource.isInitialized) {
-                    await appDataSource.destroy();
-                }
-                process.exit(0);
-            } catch (error) {
-                console.error("shutdown error", error);
-                process.exit(1);
-            }
+
+    const shutdown = () => {
+        clearInterval(sweeper);
+        server.close(() => {
+            Promise.allSettled([
+                redis.isOpen ? redis.disconnect() : Promise.resolve(),
+                AppDataSource.isInitialized ? AppDataSource.destroy() : Promise.resolve(),
+            ]).finally(() => process.exit(0));
         });
     };
 
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
 }
-
 
 bootstrap().catch((error) => {
     console.error("bootstrap error", error);

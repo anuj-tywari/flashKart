@@ -1,27 +1,38 @@
-import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, Index} from "typeorm";
-import {Cart} from './Cart'
-import {Order} from './Order'
-import {Reservation} from './Reservation'
+import { Column, CreateDateColumn, Entity, Index, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Cart } from "./Cart";
+import { Order } from "./Order";
+import { Reservation } from "./Reservation";
 
 @Entity("users")
 export class User {
     @PrimaryGeneratedColumn("uuid")
-    id!: string;
+    id: string;
 
-    @Column({unique: true, length: 255})
-    @Index()
-    email!: string;
+    @Column({ type: "varchar", length: 100 })
+    firstName: string;
 
-    @OneToMany(() => Cart, cart => cart.user)
-    carts!: Cart[];
+    @Column({ type: "varchar", length: 100 })
+    lastName: string;
 
-    @OneToMany(() => Order, order => order.user)
-    orders!: Order[];
+    @Index("UQ_users_email", { unique: true })
+    @Column({ type: "varchar", length: 255 })
+    email: string;
 
-    @OneToMany(() => Reservation, reservation => reservation.user)
-    reservations!: Reservation[];
+    @Column({ type: "boolean", default: true })
+    isActive: boolean;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+    @OneToMany(() => Cart, (cart) => cart.user)
+    carts: Cart[];
 
+    @OneToMany(() => Order, (order) => order.user)
+    orders: Order[];
+
+    @OneToMany(() => Reservation, (reservation) => reservation.user)
+    reservations: Reservation[];
+
+    @CreateDateColumn({ type: "timestamptz" })
+    createdAt: Date;
+
+    @UpdateDateColumn({ type: "timestamptz" })
+    updatedAt: Date;
 }

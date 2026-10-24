@@ -1,41 +1,28 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    OneToMany,
-    OneToOne,
-    Check,
-    ManyToOne,
-    JoinColumn
-} from 'typeorm';
-import {Order} from "./Order";
-import {Product} from "./Product";
+import { Check, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Order } from "./Order";
+import { moneyTransformer, Product } from "./Product";
 
-@Entity("order_item")
-@Check("CHK_order_item_quantity", '"quantity" > 0')
+@Entity("order_items")
+@Check("CHK_order_item_quantity", `"quantity" > 0`)
+@Check("CHK_order_item_price", `"unitPrice" >= 0`)
 export class OrderItem {
     @PrimaryGeneratedColumn("uuid")
-    id!: string;
+    id: string;
 
-    @ManyToOne(() => Order, order => order.orderItem,{
-        nullable: false, onDelete: "CASCADE"
-    })
-    @JoinColumn()
-    order!: Order;
+    @ManyToOne(() => Order, (order) => order.items, { nullable: false, onDelete: "CASCADE" })
+    @JoinColumn({ name: "orderId" })
+    order: Order;
 
-    @ManyToOne(() => Product,{
-        nullable: false, onDelete: "RESTRICT"
-    })
-    @JoinColumn()
-    product!: Product;
+    @ManyToOne(() => Product, { nullable: false, onDelete: "RESTRICT" })
+    @JoinColumn({ name: "productId" })
+    product: Product;
 
-    @Column("int")
-    quantity!: number;
+    @Column({ type: "int" })
+    quantity: number;
 
-    @Column("decimal", {precision: 10, scale: 2})
-    price!: number;
+    @Column({ type: "numeric", precision: 12, scale: 2, transformer: moneyTransformer })
+    unitPrice: number;
 
-    @CreateDateColumn()
-    created_at!: Date;
+    @CreateDateColumn({ type: "timestamptz" })
+    createdAt: Date;
 }

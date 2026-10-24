@@ -1,38 +1,31 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    OneToMany,
-    OneToOne,
-    Check,
-    ManyToOne,
-    JoinColumn
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { CartItem } from "./CartItem";
+import { User } from "./User";
 
-import {User} from "./User";
-import {cartItem} from "./CartItem";
+export enum CartStatus {
+    ACTIVE = "ACTIVE",
+    CHECKED_OUT = "CHECKED_OUT",
+}
 
 @Entity("carts")
-export class Cart{
+@Index("IDX_carts_user_status", ["user", "status"])
+export class Cart {
     @PrimaryGeneratedColumn("uuid")
-    id!: string;
+    id: string;
 
-    @Column({type: "decimal", precision: 10, scale: 2})
-    price!: number;
+    @ManyToOne(() => User, (user) => user.carts, { nullable: false, onDelete: "CASCADE" })
+    @JoinColumn({ name: "userId" })
+    user: User;
 
-    @ManyToOne(() => User, user => user.carts,{
-        nullable:false, onDelete: "CASCADE"
-})
+    @Column({ type: "varchar", length: 32, default: CartStatus.ACTIVE })
+    status: CartStatus;
 
-    @JoinColumn()
-    user!: User;
+    @OneToMany(() => CartItem, (item) => item.cart, { cascade: true })
+    items: CartItem[];
 
-    @OneToMany(() => cartItem, item => item.cart, {
-        cascade: true
-    })
-    items!: cartItem;
+    @CreateDateColumn({ type: "timestamptz" })
+    createdAt: Date;
 
-    @CreateDateColumn()
-    createdAt!: Date;
+    @UpdateDateColumn({ type: "timestamptz" })
+    updatedAt: Date;
 }
